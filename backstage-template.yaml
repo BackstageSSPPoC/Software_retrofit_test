@@ -67,7 +67,7 @@ spec:
         description: |
           This PR adds:
           - Jenkinsfile
-          - Dockerfile
+          - DockerFile
           - catalog-info.yaml
           - Kubernetes manifests
         sourcePath: ./        # fetched files
