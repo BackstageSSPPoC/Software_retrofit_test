@@ -78,7 +78,7 @@ spec:
       name: Register Existing Repo
       action: catalog:register
       input:
-        repoUrl: ${{ parameters.repoUrl }}
+        repoContentsUrl: ${{ steps['inject-ci-cd'].output.repoContentsUrl }}
         catalogInfoPath: "/catalog-info.yaml"
 
     # ✅ 4. Create GitOps PR (REUSE YOUR EXISTING LOGIC)
