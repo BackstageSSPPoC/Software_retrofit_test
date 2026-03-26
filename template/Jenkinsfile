@@ -23,12 +23,12 @@ pipeline {
         stage('Resolve App Name') {
             steps {
                 script {
-                    if (!env.APP_NAME || env.APP_NAME == 'default-app') {
-                        env.APP_NAME = sh(
-                            script: "basename `git rev-parse --show-toplevel`",
-                            returnStdout: true
-                        ).trim().toLowerCase()
-                    }
+                    def repoName = sh(
+                        script: "basename `git config --get remote.origin.url` .git",
+                        returnStdout: true
+                    ).trim()
+        
+                    env.APP_NAME = repoName.toLowerCase()
                 }
             }
         }
