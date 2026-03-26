@@ -35,13 +35,25 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install || true'
+                script {
+                    if (fileExists('package.json')) {
+                        sh 'npm install'
+                    } else {
+                        echo "No package.json found, skipping npm install"
+                    }
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'npm test || true'
+                script {
+                    if (fileExists('package.json')) {
+                        sh 'npm test || true'
+                    } else {
+                        echo "Skipping tests"
+                    }
+                }
             }
         }
 
