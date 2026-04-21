@@ -304,23 +304,36 @@ pipeline {
             }
         }
     
-        stage('Debug Branch Info') {
+        stage('Decide Pipeline Flow') {
             steps {
                 script {
-                    echo "BRANCH_NAME: ${env.BRANCH_NAME}"
+    
+                    echo "Branch: ${env.BRANCH_NAME}"
                     echo "GIT_BRANCH: ${env.GIT_BRANCH}"
-                    echo "GIT_LOCAL_BRANCH: ${env.GIT_LOCAL_BRANCH}"
+    
+                    // ✅ MAIN → CI + CD
+                    if (env.BRANCH_NAME == "main" || env.BRANCH_NAME.endsWith("/main") || env.GIT_BRANCH?.endsWith("main")) {
+                        echo "Main branch detected → CI + CD"
+                        env.RUN_MODE = "cd"
+                    } 
+                    // ✅ ANY OTHER BRANCH → CI ONLY
+                    else {
+                        echo "Non-main branch → CI only"
+                        env.RUN_MODE = "ci"
+                    }
                 }
             }
         }
     
-        // ================= CI (ALWAYS RUN) =================
+// ================= CI STAGES =================
     
         stage('Install Dependencies') {
             steps {
                 script {
                     if (fileExists('package.json')) {
                         sh 'npm install'
+                    } else {
+                        echo "No package.json found"
                     }
                 }
             }
@@ -331,6 +344,8 @@ pipeline {
                 script {
                     if (fileExists('package.json')) {
                         sh 'npm test || true'
+                    } else {
+                        echo "Skipping tests"
                     }
                 }
             }
@@ -342,15 +357,11 @@ pipeline {
             }
         }
     
-        // ================= CD (ONLY MAIN) =================
+// ================= CD STAGES =================
     
         stage('Login to Docker Hub') {
             when {
-                anyOf {
-                    branch 'main'
-                    expression { env.GIT_BRANCH?.endsWith('main') }
-                    expression { env.GIT_LOCAL_BRANCH == 'main' }
-                }
+                expression { env.RUN_MODE == "cd" }
             }
             steps {
                 withCredentials([usernamePassword(
@@ -365,11 +376,7 @@ pipeline {
     
         stage('Push Docker Image') {
             when {
-                anyOf {
-                    branch 'main'
-                    expression { env.GIT_BRANCH?.endsWith('main') }
-                    expression { env.GIT_LOCAL_BRANCH == 'main' }
-                }
+                expression { env.RUN_MODE == "cd" }
             }
             steps {
                 sh 'docker push ${IMAGE_TAG}'
@@ -378,11 +385,7 @@ pipeline {
     
         stage('Update GitOps Repo') {
             when {
-                anyOf {
-                    branch 'main'
-                    expression { env.GIT_BRANCH?.endsWith('main') }
-                    expression { env.GIT_LOCAL_BRANCH == 'main' }
-                }
+                expression { env.RUN_MODE == "cd" }
             }
             steps {
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
@@ -419,5 +422,4 @@ pipeline {
         }
     }
 }
-
 
