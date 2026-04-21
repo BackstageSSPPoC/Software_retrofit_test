@@ -287,14 +287,14 @@
 
 pipeline {
     agent any
-
+    
     environment {
         APP_NAME = "${{values.app_name}}".toLowerCase().trim()
         DOCKER_IMAGE = "chaitanyapandeygspann/${APP_NAME}"
         DOCKER_TAG = "1.0.${BUILD_NUMBER}"
         IMAGE_TAG = "${DOCKER_IMAGE}:${DOCKER_TAG}"
         GITOPS_REPO = "https://github.com/BackstageSSPPoC/k8s-manifests.git"
-        RUN_MODE = "false"
+        RUN_MODE = "ci"
     }
     
     stages {
@@ -309,50 +309,18 @@ pipeline {
             steps {
                 script {
     
-                    def commitMessage = sh(
-                        script: "git log -1 --pretty=%B",
-                        returnStdout: true
-                    ).trim()
-    
                     echo "Branch: ${env.BRANCH_NAME}"
-                    echo "Commit: ${commitMessage}"
     
-                    // ❌ Skip template injection
-                    if (commitMessage.toLowerCase().contains("skip ci")) {
-                        echo "Skipping template injection commit"
-                        env.RUN_MODE = "false"
-                        return
-                    }
-    
-                    // ✅ Feature branch → CI only
-                    if (env.BRANCH_NAME.startsWith("feature/")) {
-                        echo "Feature branch → CI only"
-                        env.RUN_MODE = "ci"
-                        return
-                    }
-    
-                    // ✅ Main branch → CI + CD
+                    // ✅ MAIN → CI + CD
                     if (env.BRANCH_NAME == "main") {
-                        echo "Main branch → CI + CD"
+                        echo "Main branch detected → CI + CD"
                         env.RUN_MODE = "cd"
-                        return
+                    } 
+                    // ✅ ANY OTHER BRANCH → CI ONLY
+                    else {
+                        echo "Non-main branch → CI only"
+                        env.RUN_MODE = "ci"
                     }
-    
-                    // ❌ Others skip
-                    env.RUN_MODE = "false"
-                }
-            }
-        }
-    
-        stage('Stop Pipeline') {
-            when {
-                expression { env.RUN_MODE == "false" }
-            }
-            steps {
-                script {
-                    echo "Stopping pipeline"
-                    currentBuild.result = 'SUCCESS'
-                    error("Pipeline intentionally stopped")
                 }
             }
         }
@@ -360,9 +328,6 @@ pipeline {
         // ================= CI STAGES =================
     
         stage('Install Dependencies') {
-            when {
-                expression { env.RUN_MODE == "ci" || env.RUN_MODE == "cd" }
-            }
             steps {
                 script {
                     if (fileExists('package.json')) {
@@ -375,9 +340,6 @@ pipeline {
         }
     
         stage('Run Tests') {
-            when {
-                expression { env.RUN_MODE == "ci" || env.RUN_MODE == "cd" }
-            }
             steps {
                 script {
                     if (fileExists('package.json')) {
@@ -390,9 +352,6 @@ pipeline {
         }
     
         stage('Build Docker Image') {
-            when {
-                expression { env.RUN_MODE == "ci" || env.RUN_MODE == "cd" }
-            }
             steps {
                 sh 'docker build -t ${IMAGE_TAG} .'
             }
@@ -463,5 +422,6 @@ pipeline {
         }
     }
 }
+
 
 
