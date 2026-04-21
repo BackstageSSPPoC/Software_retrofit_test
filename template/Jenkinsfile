@@ -294,7 +294,6 @@ pipeline {
         DOCKER_TAG = "1.0.${BUILD_NUMBER}"
         IMAGE_TAG = "${DOCKER_IMAGE}:${DOCKER_TAG}"
         GITOPS_REPO = "https://github.com/BackstageSSPPoC/k8s-manifests.git"
-        RUN_MODE = "ci"
     }
     
     stages {
@@ -305,35 +304,23 @@ pipeline {
             }
         }
     
-        stage('Decide Pipeline Flow') {
+        stage('Debug Branch Info') {
             steps {
                 script {
-    
-                    echo "Branch: ${env.BRANCH_NAME}"
-    
-                    // ✅ MAIN → CI + CD
-                    if (env.BRANCH_NAME == "main") {
-                        echo "Main branch detected → CI + CD"
-                        env.RUN_MODE = "cd"
-                    } 
-                    // ✅ ANY OTHER BRANCH → CI ONLY
-                    else {
-                        echo "Non-main branch → CI only"
-                        env.RUN_MODE = "ci"
-                    }
+                    echo "BRANCH_NAME: ${env.BRANCH_NAME}"
+                    echo "GIT_BRANCH: ${env.GIT_BRANCH}"
+                    echo "GIT_LOCAL_BRANCH: ${env.GIT_LOCAL_BRANCH}"
                 }
             }
         }
     
-        // ================= CI STAGES =================
+        // ================= CI (ALWAYS RUN) =================
     
         stage('Install Dependencies') {
             steps {
                 script {
                     if (fileExists('package.json')) {
                         sh 'npm install'
-                    } else {
-                        echo "No package.json found"
                     }
                 }
             }
@@ -344,8 +331,6 @@ pipeline {
                 script {
                     if (fileExists('package.json')) {
                         sh 'npm test || true'
-                    } else {
-                        echo "Skipping tests"
                     }
                 }
             }
@@ -357,11 +342,15 @@ pipeline {
             }
         }
     
-        // ================= CD STAGES =================
+        // ================= CD (ONLY MAIN) =================
     
         stage('Login to Docker Hub') {
             when {
-                expression { env.RUN_MODE == "cd" }
+                anyOf {
+                    branch 'main'
+                    expression { env.GIT_BRANCH?.endsWith('main') }
+                    expression { env.GIT_LOCAL_BRANCH == 'main' }
+                }
             }
             steps {
                 withCredentials([usernamePassword(
@@ -376,7 +365,11 @@ pipeline {
     
         stage('Push Docker Image') {
             when {
-                expression { env.RUN_MODE == "cd" }
+                anyOf {
+                    branch 'main'
+                    expression { env.GIT_BRANCH?.endsWith('main') }
+                    expression { env.GIT_LOCAL_BRANCH == 'main' }
+                }
             }
             steps {
                 sh 'docker push ${IMAGE_TAG}'
@@ -385,7 +378,11 @@ pipeline {
     
         stage('Update GitOps Repo') {
             when {
-                expression { env.RUN_MODE == "cd" }
+                anyOf {
+                    branch 'main'
+                    expression { env.GIT_BRANCH?.endsWith('main') }
+                    expression { env.GIT_LOCAL_BRANCH == 'main' }
+                }
             }
             steps {
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
@@ -422,6 +419,5 @@ pipeline {
         }
     }
 }
-
 
 
