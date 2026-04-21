@@ -165,7 +165,7 @@ spec:
       input:
         repoUrl: github.com?owner=BackstageSSPPoC&repo=${{ parameters.repo }}
         branch: ${{ parameters.branch }}
-        commitMessage: "Inject CI/CD template"
+        commitMessage: "chore: inject CI/CD template"
         sourcePath: ./
 
   output:
