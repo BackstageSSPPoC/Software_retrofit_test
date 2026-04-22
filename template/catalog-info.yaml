@@ -12,6 +12,7 @@ metadata:
     argocd/app-name: ${{ values.app_name | lower }}
     backstage.io/kubernetes-id: ${{values.app_name}}
     backstage.io/kubernetes-namespace: default
+    sonarqube.org/project-key: ${{ values.app_name | lower }}
 
 spec:
   type: service
