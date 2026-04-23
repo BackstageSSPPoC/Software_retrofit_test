@@ -113,7 +113,7 @@ spec:
   type: service
 
   parameters:
-    - title: Select Repo & Branch
+    - title: Select Repo
       required:
         - repo
         - component_id
