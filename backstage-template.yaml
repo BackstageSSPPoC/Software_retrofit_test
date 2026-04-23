@@ -116,7 +116,6 @@ spec:
     - title: Select Repo & Branch
       required:
         - repo
-        - branch
         - component_id
   
       properties:
@@ -125,10 +124,6 @@ spec:
           title: Select Repository
           type: string
           # ui:field: RepoDropdown
-
-        branch:
-          title: Select Branch
-          type: string
 
         component_id:
           title: Component Name
@@ -164,11 +159,11 @@ spec:
       action: github:push
       input:
         repoUrl: github.com?owner=BackstageSSPPoC&repo=${{ parameters.repo }}
-        branch: ${{ parameters.branch }}
+        branch: main
         commitMessage: "chore: inject CI/CD template"
         sourcePath: ./
 
   output:
     links:
       - title: View Repository
-        url: https://github.com/BackstageSSPPoC/${{ parameters.repo }}/tree/${{ parameters.branch }}
+        url: https://github.com/BackstageSSPPoC/${{ parameters.repo }}/tree/main
