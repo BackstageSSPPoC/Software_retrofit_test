@@ -125,10 +125,6 @@ spec:
           type: string
           # ui:field: RepoDropdown
 
-        component_id:
-          title: Component Name
-          type: string
-
         environment:
           title: Environment
           type: string
@@ -143,7 +139,7 @@ spec:
       input:
         url: ./template
         values:
-          app_name: ${{ parameters.component_id }}
+          app_name: ${{ parameters.repo }}
           app_env: ${{ parameters.environment }}
 
     # - id: register
