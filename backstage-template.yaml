@@ -116,7 +116,6 @@ spec:
     - title: Select Repo
       required:
         - repo
-        - component_id
   
       properties:
 
